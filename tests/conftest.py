@@ -14,7 +14,11 @@ sys.path.insert(0, os.path.join(ROOT, "tests"))
 
 
 def pytest_sessionstart(session):
-    """Ensure a real ELF core dump fixture exists before the tests run."""
+    """Ensure a real ELF core dump fixture exists before the tests run.
+
+    On Windows, core dump generation is skipped; tests that need CORE will
+    skip or fail gracefully.
+    """
     from make_core import ensure
 
     ensure()
