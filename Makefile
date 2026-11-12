@@ -1,14 +1,19 @@
+PYTHON ?= python3
 CC ?= gcc
-CORE ?= tests/core
 
-all:
-	$(CC) -O0 -g -static -o tests/crash tests/crash.c
-	ulimit -c unlimited && (cd tests && ./crash) || true
+.PHONY: all core test clean
 
-test: all
-	python3 -m pytest -q
+all: core
+
+core: tests/crash
+	$(PYTHON) tests/make_core.py
+
+tests/crash: tests/crash.c
+	$(CC) -O0 -g -static -fno-pie -no-pie -o tests/crash tests/crash.c
+
+test: core
+	$(PYTHON) -m pytest -q
 
 clean:
-	rm -f tests/crash tests/core
-
-.PHONY: all test clean
+	rm -f tests/crash tests/core core core.* *.core
+	find . -name '__pycache__' -type d -prune -exec rm -rf {} +
