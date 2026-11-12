@@ -1,0 +1,16 @@
+[project]
+name = "crash-mcp"
+version = "0.1.0"
+description = "MCP server for inspecting native crash dumps"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+    "mcp>=1.0",
+    "pyelftools>=0.29",
+    "minidump>=0.0.20",
+    "capstone>=5.0",
+]
+
+[project.scripts]
+crash-mcp = "server:main"

@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+tests/crash
+tests/core
+tests/*.bin
