@@ -8,16 +8,17 @@
 Windows minidump) and presents the crash reason, faulting thread, and stack
 trace to an AI assistant. It never executes the dump.
 
-## Features
+## Platform support
 
-- Parse ELF core dumps with pyelftools: architecture, process name, signal,
-  faulting PC, threads, modules (with base/size).
-- Parse Windows minidumps with the `minidump` library.
-- Stack traces via `gdb` (safe subprocess, no `shell=True`, timeout enforced).
-- Capstone disassembly around any address present in dump memory.
-- Compare two dumps.
-- Pagination for threads and frames.
-- Clear errors for missing dumps, bad formats, missing gdb, timeouts.
+| Platform | ELF core (gdb) | Windows minidump | Notes |
+|----------|----------------|------------------|-------|
+| Linux    | ✅ Full        | ✅ Yes           | gdb required for ELF core stack traces |
+| Windows  | ⚠️ Summary only| ✅ Full          | gdb is not available; minidump is the primary path |
+| macOS    | ⚠️ Summary only| ✅ Yes           | gdb may not be installed |
+
+On Windows, ELF core dumps can still be parsed for basic info (arch, threads,
+modules), but stack traces via `gdb` are unavailable. Windows minidump files
+are fully supported.
 
 ## Install
 
@@ -25,15 +26,16 @@ trace to an AI assistant. It never executes the dump.
 pip install "mcp>=1.0" pyelftools minidump capstone
 ```
 
-Optional: install `gdb` for ELF core stack traces.
+Optional: install `gdb` for ELF core stack traces (Linux only).
 
-## Build the test fixture
+## Build the test fixture (Linux)
 
 ```bash
 make
 ```
 
-Compiles `tests/crash` and generates `tests/core`.
+Compiles `tests/crash` and generates `tests/core`. Requires `gcc` and a kernel
+that allows core dumps. On Windows, skip this step; minidump tests use mocks.
 
 ## Run
 
@@ -61,7 +63,7 @@ The server speaks MCP over stdio.
 
 | Tool | Description |
 |------|-------------|
-| `crash_load(dump_path, binary_paths=[], symbols_path=None)` | Load a dump and detect its format. |
+| `crash_load(dump_path, binary_paths=[], symbols_path=None)` | Load a dump (ELF core or Windows minidump) and detect its format. |
 | `crash_summary()` | Crash type, faulting address, thread, arch, module, symbols. |
 | `crash_threads(limit=20, offset=0)` | List threads (paginated). |
 | `crash_stack(thread_id, limit=30, offset=0)` | Stack frames for a thread. |
@@ -70,19 +72,30 @@ The server speaks MCP over stdio.
 
 ## Testing
 
+### Linux (full suite)
+
 ```bash
 make test
 ```
 
-Runs the pytest suite (ELF core integration, minidump parser, MCP smoke,
-error paths, pagination).
+Runs the full pytest suite: ELF core integration (real core dump + gdb),
+minidump parser, MCP smoke test, error paths, pagination.
+
+### Windows (minidump only)
+
+```bash
+python -m pytest tests/test_minidump_mock.py tests/test_extra.py -q
+```
+
+Runs minidump mock tests and session/validation tests that do not require a
+core dump or gdb.
 
 ## Architecture
 
 ```
 server.py           MCP tool definitions (stdio transport)
 analyzer.py         Session management and common reporting
-elf_core.py         ELF core parsing and gdb-based stack traces
+elf_core.py         ELF core parsing and gdb-based stack traces (Linux)
 minidump_reader.py  Windows minidump parsing
 ```
 
@@ -94,9 +107,10 @@ minidump_reader.py  Windows minidump parsing
 
 ## Limitations
 
-- ELF core stack traces require gdb.
+- ELF core stack traces require gdb (Linux only).
 - Minidump stack traces are best-effort frame-pointer walks.
 - Minidump thread context parsing depends on the minidump library version.
+- On Windows, ELF core stack traces are unavailable (no gdb).
 
 ## License
 
