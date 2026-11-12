@@ -39,8 +39,34 @@ def _core_candidates() -> list[str]:
     return sorted(set(f for f in found if os.path.isfile(f)))
 
 
+def capture_core_via_gdb() -> str | None:
+    """Generate a core dump by running the binary under gdb.
+
+    Used as a fallback when the kernel does not write core files directly
+    (common on CI runners with restricted core_pattern).
+    """
+    try:
+        subprocess.run(
+            [
+                "gdb", "-batch", "-nx", "-q",
+                "-ex", "set pagination off",
+                "-ex", "run",
+                "-ex", f"generate-core-file {CORE}",
+                "-ex", "quit",
+                "--args", BIN,
+            ],
+            cwd=HERE,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+    except Exception:
+        pass
+    return CORE if os.path.exists(CORE) else None
+
+
 def capture_core() -> str | None:
-    """Run the crashing binary and locate the produced core dump."""
+    """Run the crashing binary and locate (or generate) the core dump."""
     for f in _core_candidates():
         os.remove(f)
 
@@ -66,13 +92,15 @@ def capture_core() -> str | None:
         print(f"warning: crashing binary exited normally ({proc.returncode})", file=sys.stderr)
 
     candidates = _core_candidates()
-    if not candidates:
-        return None
-    # Prefer the newest file.
-    newest = max(candidates, key=os.path.getmtime)
-    if os.path.abspath(newest) != os.path.abspath(CORE):
-        shutil.copyfile(newest, CORE)
-    return CORE
+    if candidates:
+        newest = max(candidates, key=os.path.getmtime)
+        if os.path.abspath(newest) != os.path.abspath(CORE):
+            shutil.copyfile(newest, CORE)
+        return CORE
+
+    # Fallback: generate core via gdb (works when kernel restricts core files).
+    print("direct core capture failed; trying gdb generate-core-file", file=sys.stderr)
+    return capture_core_via_gdb()
 
 
 def ensure() -> str:
