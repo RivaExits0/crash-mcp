@@ -13,6 +13,8 @@ trace to an AI assistant. It never executes the dump.
 > trace'i bir AI asistanına sunar. Döküm dosyasını asla çalıştırmadan, salt
 > okunur analiz yapar.
 
+---
+
 ## Platform Support
 
 | Platform | ELF core (gdb) | Windows minidump | Notes |
@@ -25,13 +27,30 @@ On Windows, ELF core dumps can still be parsed for basic info (arch, threads,
 modules), but stack traces via `gdb` are unavailable. Windows minidump files
 are fully supported.
 
+---
+
 ## Install
 
+### From PyPI (when published)
 ```bash
-pip install "mcp>=1.0" pyelftools minidump capstone
+pip install crash-mcp
 ```
 
-Optional: install `gdb` for ELF core stack traces (Linux only).
+### From GitHub
+```bash
+pip install git+https://github.com/RivaExits0/crash-mcp.git
+```
+
+### From Source
+```bash
+git clone https://github.com/RivaExits0/crash-mcp.git
+cd crash-mcp
+pip install -e .[dev]    # or just `pip install -e .` for production
+```
+
+> **System requirements (Linux):** `gcc`, `gdb`, and `binutils` for building test fixture. Optional: install `gdb` for ELF core stack traces (Linux only).
+
+---
 
 ## Build the Test Fixture (Linux)
 
@@ -42,27 +61,57 @@ make
 Compiles `tests/crash` and generates `tests/core`. Requires `gcc` and a kernel
 that allows core dumps. On Windows, skip this step; minidump tests use mocks.
 
+---
+
 ## Run
 
 ```bash
-python server.py
+crash-mcp
+# or
+python -m crash_mcp
 ```
 
 The server speaks MCP over **stdio**.
 
+---
+
+## Claude Desktop Integration
+
+Add to `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "crash-mcp": {
+      "command": "crash-mcp",
+      "args": [],
+      "env": {}
+    }
+  }
+}
+```
+
+> **Windows:** If installed via pip, `crash-mcp` should be on PATH. Otherwise use full path: `C:\\path\\to\\crash-mcp\\.venv\\Scripts\\crash-mcp.exe`.
+
+---
+
 ## OpenCode Integration
+
+Add to `opencode.json`:
 
 ```json
 {
   "mcp": {
     "crash": {
       "type": "local",
-      "command": ["python", "/path/to/crash-mcp/server.py"],
+      "command": ["crash-mcp"],
       "enabled": true
     }
   }
 }
 ```
+
+---
 
 ## MCP Tools
 
@@ -74,6 +123,8 @@ The server speaks MCP over **stdio**.
 | `crash_stack(thread_id, limit=30, offset=0)` | Stack frames for a thread. | After `crash_threads`, to inspect a thread. |
 | `crash_disassemble(address, before=8, after=8)` | Disassemble around an address. | To inspect instructions near crash PC. |
 | `crash_compare(dump_path_a, dump_path_b)` | Compare two dumps. | To check if two crashes are similar. |
+
+---
 
 ### Tool: `crash_load`
 
@@ -100,6 +151,8 @@ The server speaks MCP over **stdio**.
 }
 ```
 
+---
+
 ### Tool: `crash_summary`
 
 **Example call:**
@@ -118,6 +171,8 @@ The server speaks MCP over **stdio**.
   "process_name": "crash"
 }
 ```
+
+---
 
 ### Tool: `crash_threads`
 
@@ -144,6 +199,8 @@ The server speaks MCP over **stdio**.
 }
 ```
 
+---
+
 ### Tool: `crash_stack`
 
 **Example call:**
@@ -167,6 +224,8 @@ The server speaks MCP over **stdio**.
 }
 ```
 
+---
+
 ### Tool: `crash_disassemble`
 
 **Example call:**
@@ -187,6 +246,8 @@ The server speaks MCP over **stdio**.
   ]
 }
 ```
+
+---
 
 ### Tool: `crash_compare`
 
@@ -209,6 +270,18 @@ The server speaks MCP over **stdio**.
 }
 ```
 
+---
+
+## Pagination (`limit` / `offset`)
+
+`crash_threads` and `crash_stack` support `limit` and `offset`:
+- `limit`: maximum number of items to return (default 20 for threads, 30 for stack)
+- `offset`: number of items to skip (default 0)
+
+Response includes a `pagination`-style object with `total`, `offset`, `limit`, `returned`, and `has_more`.
+
+---
+
 ## Testing
 
 ### Linux (full suite)
@@ -229,28 +302,34 @@ python -m pytest tests/test_minidump_mock.py tests/test_extra.py -q
 Runs minidump mock tests and session/validation tests that do not require a
 core dump or gdb.
 
+### macOS (minidump only)
+
+```bash
+python -m pytest tests/test_minidump_mock.py tests/test_extra.py -q
+```
+
+---
+
 ## Architecture
 
 ```
-server.py           MCP tool definitions (stdio transport)
-analyzer.py         Session management and common reporting
-elf_core.py         ELF core parsing and gdb-based stack traces (Linux)
-minidump_reader.py  Windows minidump parsing
+src/crash_mcp/
+├── server.py           MCP tool definitions (stdio transport)
+├── analyzer.py         Session management and common reporting
+├── elf_core.py         ELF core parsing and gdb-based stack traces (Linux)
+├── minidump_reader.py  Windows minidump parsing
+└── platform_utils.py   Cross-platform paths, subprocess, file I/O
 ```
 
-## Pagination (`limit` / `offset`)
-
-`crash_threads` and `crash_stack` support `limit` and `offset`:
-- `limit`: maximum number of items to return (default 20 for threads, 30 for stack)
-- `offset`: number of items to skip (default 0)
-
-Response includes a `pagination`-style object with `total`, `offset`, `limit`, `returned`, and `has_more`.
+---
 
 ## Security
 
 - No `shell=True`; external commands use argument lists with timeouts.
 - No dump execution, no network, no filesystem scanning beyond provided paths.
 - Sensitive memory is not returned by default; only registers, addresses, frames.
+
+---
 
 ## Limitations
 
@@ -259,6 +338,29 @@ Response includes a `pagination`-style object with `total`, `offset`, `limit`, `
 - Minidump thread context parsing depends on the minidump library version.
 - On Windows, ELF core stack traces are unavailable (no gdb).
 - Static analysis cannot guarantee runtime behaviour.
+
+---
+
+## 🔗 Related Projects
+
+- **forge-mcp** — Game modding toolkit (hex, PE, APK, Unity, Unreal, tables). Use for hex editing, signature generation, APK repacking.
+- **emu-mcp** — Isolated function emulation with Unicorn. Use for verifying function behavior with concrete inputs.
+- **henry-mcp** — Static compatibility analysis for EXE/DLL/APK/Kotlin. Use for checking module compatibility.
+
+---
+
+## 📦 Release
+
+- **Latest:** [v0.1.0](https://github.com/RivaExits0/crash-mcp/releases/tag/v0.1.0)
+- **Install from release:** `pip install git+https://github.com/RivaExits0/crash-mcp.git@v0.1.0`
+
+### Create Release
+```bash
+git tag -a v0.1.0 -m "crash-mcp v0.1.0: Initial release"
+git push origin v0.1.0
+```
+
+---
 
 ## License
 

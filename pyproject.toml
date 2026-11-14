@@ -5,6 +5,21 @@ description = "MCP server for inspecting native crash dumps (ELF core and Window
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
+authors = [{ name = "RivaExits0" }]
+keywords = ["mcp", "model-context-protocol", "crash-dump", "minidump", "elf-core", "reverse-engineering", "debugging"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Debuggers",
+    "Topic :: Security",
+    "Topic :: Utilities",
+]
 dependencies = [
     "mcp>=1.0",
     "pyelftools>=0.29",
@@ -16,16 +31,20 @@ dependencies = [
 dev = ["pytest"]
 
 [project.scripts]
-crash-mcp = "server:main"
+crash-mcp = "crash_mcp.server:main"
+
+[project.urls]
+Homepage = "https://github.com/RivaExits0/crash-mcp"
+Issues = "https://github.com/RivaExits0/crash-mcp/issues"
+Repository = "https://github.com/RivaExits0/crash-mcp"
 
 [build-system]
 requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-where = ["."]
-include = ["*.py"]
+where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["."]
+pythonpath = ["src"]

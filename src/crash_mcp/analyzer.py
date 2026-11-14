@@ -5,8 +5,8 @@ from __future__ import annotations
 import os
 from typing import Any, Dict, List, Optional
 
-from elf_core import ElfCore, ElfCoreError
-from minidump_reader import MinidumpAnalyzer, MinidumpError
+from crash_mcp.elf_core import ElfCore, ElfCoreError
+from crash_mcp.minidump_reader import MinidumpAnalyzer, MinidumpError
 
 
 class CrashSessionError(Exception):

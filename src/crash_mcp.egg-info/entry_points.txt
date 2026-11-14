@@ -1,0 +1,2 @@
+[console_scripts]
+crash-mcp = crash_mcp.server:main

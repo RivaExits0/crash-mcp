@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main, master]
+    branches: [main]
   pull_request:
-    branches: [main, master]
+    branches: [main]
 
 jobs:
   test-linux:
@@ -13,7 +13,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.10"
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -21,12 +21,33 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install "mcp>=1.0" pyelftools minidump capstone pytest
+          pip install -e .[dev]
+      - name: Build test fixture
+        run: make core
       - name: Run test suite
-        run: make test
+        run: pytest -q
 
   test-windows:
     runs-on: windows-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .[dev]
+      - name: Verify package imports on Windows
+        run: python -c "import crash_mcp.server, crash_mcp.analyzer, crash_mcp.elf_core, crash_mcp.minidump_reader; print('imports OK')"
+      - name: Run minidump parser tests (Windows-compatible)
+        run: python -m pytest tests/test_minidump_mock.py tests/test_extra.py -q
+
+  test-macos:
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -35,8 +56,8 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install "mcp>=1.0" pyelftools minidump capstone pytest
-      - name: Verify package imports on Windows
-        run: python -c "import server, analyzer, elf_core, minidump_reader; print('imports OK')"
-      - name: Run minidump parser tests (Windows-compatible)
-        run: python -m pytest tests/test_minidump_mock.py -q
+          pip install -e .[dev]
+      - name: Verify package imports on macOS
+        run: python -c "import crash_mcp.server, crash_mcp.analyzer, crash_mcp.elf_core, crash_mcp.minidump_reader; print('imports OK')"
+      - name: Run minidump parser tests
+        run: python -m pytest tests/test_minidump_mock.py tests/test_extra.py -q

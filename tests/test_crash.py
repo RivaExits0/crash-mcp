@@ -9,9 +9,9 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
-
-from analyzer import CrashAnalyzer, CrashSessionError
-from elf_core import ElfCore, ElfCoreError
+sys.path.insert(0, os.path.join(ROOT, "src"))
+from crash_mcp.analyzer import CrashAnalyzer, CrashSessionError
+from crash_mcp.elf_core import ElfCore, ElfCoreError
 
 CORE = os.path.join(ROOT, "tests", "core")
 CRASH_BIN = os.path.join(ROOT, "tests", "crash")

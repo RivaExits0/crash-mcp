@@ -22,7 +22,12 @@ def test_mcp_crash():
     from mcp.client.stdio import stdio_client
 
     async def main():
-        params = StdioServerParameters(command="python3", args=["server.py"], cwd=ROOT)
+        params = StdioServerParameters(
+            command="crash-mcp",
+            args=[],
+            cwd=ROOT,
+            env={**os.environ, "PYTHONPATH": os.path.join(ROOT, "src")}
+        )
         async with stdio_client(params) as (r, w):
             async with ClientSession(r, w) as s:
                 await s.initialize()

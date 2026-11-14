@@ -5,8 +5,8 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
-
-from analyzer import CrashAnalyzer, CrashSessionError
+sys.path.insert(0, os.path.join(ROOT, "src"))
+from crash_mcp.analyzer import CrashAnalyzer, CrashSessionError
 
 CORE = os.path.join(ROOT, "tests", "core")
 CRASH_BIN = os.path.join(ROOT, "tests", "crash")

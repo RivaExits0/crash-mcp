@@ -10,7 +10,7 @@ try:
 except Exception:
     from mcp.server.mcpserver import MCPServer as FastMCP
 
-from analyzer import SESSION, CrashSessionError
+from crash_mcp.analyzer import SESSION, CrashSessionError
 
 mcp = FastMCP("crash")
 

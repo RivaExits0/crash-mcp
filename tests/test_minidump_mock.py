@@ -1,10 +1,11 @@
 import os, sys, types
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
+sys.path.insert(0, os.path.join(ROOT, "src"))
 
 import pytest
 from unittest import mock
-from minidump_reader import MinidumpAnalyzer
+from crash_mcp.minidump_reader import MinidumpAnalyzer
 from minidump.streams.SystemInfoStream import PROCESSOR_ARCHITECTURE
 
 
@@ -49,9 +50,8 @@ def test_minidump_mock_happy_path(monkeypatch, tmp_path):
     p = tmp_path / "fake.dmp"
     p.write_bytes(b"MDMP" + b"\x00" * 100)
     import minidump.minidumpfile as mdf
-    import minidump_reader
+    from crash_mcp.minidump_reader import MinidumpAnalyzer
     monkeypatch.setattr(mdf.MinidumpFile, "parse", staticmethod(lambda path: fake))
-    monkeypatch.setattr(minidump_reader.MinidumpFile, "parse", staticmethod(lambda path: fake))
     a = MinidumpAnalyzer(str(p))
     assert a.arch == "x64"
     assert a.crash_thread == 7
@@ -76,9 +76,8 @@ def test_minidump_mock_no_exception(monkeypatch, tmp_path):
     p = tmp_path / "fake.dmp"
     p.write_bytes(b"MDMP" + b"\x00" * 100)
     import minidump.minidumpfile as mdf
-    import minidump_reader
+    from crash_mcp.minidump_reader import MinidumpAnalyzer
     monkeypatch.setattr(mdf.MinidumpFile, "parse", staticmethod(lambda path: fake))
-    monkeypatch.setattr(minidump_reader.MinidumpFile, "parse", staticmethod(lambda path: fake))
     a = MinidumpAnalyzer(str(p))
     assert a.crash_code is None
     assert a.crash_addr is None
@@ -90,8 +89,7 @@ def test_minidump_mock_unknown_arch(monkeypatch, tmp_path):
     p = tmp_path / "fake.dmp"
     p.write_bytes(b"MDMP" + b"\x00" * 100)
     import minidump.minidumpfile as mdf
-    import minidump_reader
+    from crash_mcp.minidump_reader import MinidumpAnalyzer
     monkeypatch.setattr(mdf.MinidumpFile, "parse", staticmethod(lambda path: fake))
-    monkeypatch.setattr(minidump_reader.MinidumpFile, "parse", staticmethod(lambda path: fake))
     a = MinidumpAnalyzer(str(p))
     assert a.arch not in ("x64", "x86")
