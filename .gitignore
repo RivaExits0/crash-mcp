@@ -3,3 +3,5 @@ __pycache__/
 tests/crash
 tests/core
 tests/*.bin
+dist/
+*.egg-info/
