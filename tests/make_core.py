@@ -21,12 +21,13 @@ BIN = os.path.join(HERE, "crash")
 CORE = os.path.join(HERE, "core")
 
 IS_WINDOWS = os.name == "nt" or sys.platform.startswith("win")
+IS_LINUX = sys.platform.startswith("linux")
 
 
 def build() -> str:
     """Compile the crashing helper binary (Linux only)."""
-    if IS_WINDOWS:
-        raise RuntimeError("cannot build on Windows (no gcc)")
+    if not IS_LINUX:
+        raise RuntimeError("cannot build on non-Linux (no static ELF support)")
     cc = os.environ.get("CC") or shutil.which("gcc") or shutil.which("cc")
     if not cc:
         raise RuntimeError("no C compiler found (set CC)")
@@ -72,11 +73,11 @@ def capture_core_via_gdb() -> str | None:
 def capture_core() -> str | None:
     """Run the crashing binary and locate (or generate) the core dump.
 
-    On Windows, core dump generation is not supported; returns None so that
-    callers can fall back gracefully.
+    On non-Linux platforms, core dump generation is not supported; returns None
+    so that callers can fall back gracefully.
     """
-    if IS_WINDOWS:
-        print("core dump capture skipped on Windows", file=sys.stderr)
+    if not IS_LINUX:
+        print("core dump capture skipped on non-Linux", file=sys.stderr)
         return None
 
     for f in _core_candidates():
@@ -118,10 +119,10 @@ def capture_core() -> str | None:
 def ensure() -> str | None:
     """Build the binary and core dump if they are missing.
 
-    On Windows, returns None if the core dump is not available; callers that
-    need a core dump should skip or handle gracefully.
+    On non-Linux platforms, returns None if the core dump is not available;
+    callers that need a core dump should skip or handle gracefully.
     """
-    if IS_WINDOWS:
+    if not IS_LINUX:
         return CORE if os.path.exists(CORE) else None
     if not os.path.exists(BIN):
         build()

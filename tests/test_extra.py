@@ -2,6 +2,7 @@
 
 import os
 import sys
+import pytest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
@@ -10,6 +11,11 @@ from crash_mcp.analyzer import CrashAnalyzer, CrashSessionError
 
 CORE = os.path.join(ROOT, "tests", "core")
 CRASH_BIN = os.path.join(ROOT, "tests", "crash")
+
+pytestmark = pytest.mark.skipif(
+    not os.path.isfile(CORE),
+    reason="ELF core fixture not available (run 'make core' on Linux)",
+)
 
 
 def test_load_missing_binary():
