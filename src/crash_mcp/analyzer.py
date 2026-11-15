@@ -210,7 +210,7 @@ class CrashAnalyzer:
 
     def compare(self, other_path: str, binary_paths=None) -> Dict[str, Any]:
         self.require_loaded()
-        binary_paths = self.binary_paths
+        binary_paths = binary_paths if binary_paths is not None else self.binary_paths
         # build second analyzer
         other = CrashAnalyzer()
         try:

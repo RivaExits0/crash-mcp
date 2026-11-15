@@ -1,7 +1,0 @@
-mcp>=1.0
-pyelftools>=0.29
-minidump>=0.0.20
-capstone>=5.0
-
-[dev]
-pytest
